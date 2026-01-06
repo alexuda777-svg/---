@@ -222,58 +222,61 @@
             battleLoop();
         }
 
-        function battleLoop(){
-            if(gameState.player.hp<=0||gameState.battleEnemy.hp<=0){
-                endBattle();
-                return;
-            }
-            
-            const log=document.getElementById('battle-log');
-            // Урон игрока
-            const playerDmg=Math.floor(Math.random()*gameState.player.strength/2)+15;
-            gameState.battleEnemy.hp-=playerDmg;
-            log.innerHTML+=`<div>💥 <span class="success">${gameState.player.name}</span> бьёт на <strong>${playerDmg}</strong> урона!</div>`;
-            
-            // Урон врага
-            if(gameState.battleEnemy.hp>0){
-                const enemyDmg=Math.floor(Math.random()*gameState.battleEnemy.strength/2)+8;
-                gameState.player.hp-=enemyDmg;
-                log.innerHTML+=`<div>💀 <span class="danger">${gameState.battleEnemy.name}</span> бьёт на <strong>${enemyDmg}</strong> урона!</div>`;
-            }
-            
-            log.innerHTML+=`<div>📊 ${gameState.player.name}: ${Math.max(0,gameState.player.hp)}/${gameState.player.maxHp}HP | ${gameState.battleEnemy.name}: ${Math.max(0,gameState.battleEnemy.hp)}/${gameState.battleEnemy.maxHp}HP</div>`;
-            log.scrollTop=log.scrollHeight;
-            updateStatus();
-            
-            if(gameState.player.hp>0&&gameState.battleEnemy.hp>0){
-                setTimeout(battleLoop,1200);
-            }
-        }
+        function battleLoop() {
+    if (gameState.player.hp <= 0 || gameState.battleEnemy.hp <= 0) {
+        endBattle();
+        return;
+    }
 
-        function endBattle(){
-            const log=document.getElementById('battle-log');
-            if(gameState.player.hp>0){
-                log.innerHTML+='<div class="victory">🏆 <strong>ПОБЕДА!</strong> +100 золота +25 магии!</div>';
-                gameState.player.gold+=100;
-                gameState.player.magic+=25;
-                gameState.battleActive=false;
-                gameState.battleEnemy=null;
-                
-                // ГАРАНТИРОВАННЫЙ ПЕРЕХОД ПОСЛЕ БОЯ
-                setTimeout(()=>{
-                    if(gameState.currentRoom=='hallway_bold'){
-                        gameState.currentRoom='courtyard';
-                    } else if(gameState.currentRoom=='garpia_fight'){
-                        gameState.currentRoom='throne_room';
-                    }
-                    document.getElementById('battle-log').style.display='none';
-                    loadRoom();
-                },3000);
-            } else {
-                log.innerHTML+='<div class="defeat">💀 <strong>ПОРАЖЕНИЕ!</strong> Игра окончена. Перезагрузка...</div>';
-                setTimeout(()=>location.reload(),4000);
+    const log = document.getElementById('battle-log');
+    // Расчёт урона игрока
+    const playerDmg = Math.floor(Math.random() * gameState.player.strength / 2) + 15;
+    gameState.battleEnemy.hp -= playerDmg;
+    log.innerHTML += `<div>💥 <span class="success">${gameState.player.name}</span> бьёт на <strong>${playerDmg}</strong> урона!</div>`;
+
+    // Проверяем, жив ли враг
+    if (gameState.battleEnemy.hp > 0) {
+        // Расчёт урона врага
+        const enemyDmg = Math.floor(Math.random() * gameState.battleEnemy.strength / 2) + 8;
+        gameState.player.hp -= enemyDmg;
+        log.innerHTML += `<div>💀 <span class="danger">${gameState.battleEnemy.name}</span> бьёт на <strong>${enemyDmg}</strong> урона!</div>`;
+    }
+
+    // Обновляем статистику здоровья
+    log.innerHTML += `<div>📊 ${gameState.player.name}: ${Math.max(0, gameState.player.hp)}/${gameState.player.maxHp}HP | ${gameState.battleEnemy.name}: ${Math.max(0, gameState.battleEnemy.hp)}/${gameState.battleEnemy.maxHp}HP</div>`;
+    log.scrollTop = log.scrollHeight;
+    updateStatus(); // Обновляем интерфейс статуса
+
+    // Если оба участника ещё живы, продолжаем битву
+    if (gameState.player.hp > 0 && gameState.battleEnemy.hp > 0) {
+        setTimeout(battleLoop, 1200); // Пауза перед следующим ходом
+    }
+}
+
+        function endBattle() {
+    const log = document.getElementById('battle-log');
+    if (gameState.player.hp > 0) {
+        log.innerHTML += '<div class="victory">🏆 <strong>ПОБЕДА!</strong> +100 золота +25 магии!</div>';
+        gameState.player.gold += 100;
+        gameState.player.magic += 25;
+        gameState.battleActive = false;
+        gameState.battleEnemy = null;
+
+        // Переход после победы
+        setTimeout(() => {
+            if (gameState.currentRoom === 'hallway_bold') {
+                gameState.currentRoom = 'courtyard';
+            } else if (gameState.currentRoom === 'garpia_fight') {
+                gameState.currentRoom = 'throne_room';
             }
-        }
+            document.getElementById('battle-log').style.display = 'none';
+            loadRoom();
+        }, 3000);
+    } else {
+        log.innerHTML += '<div class="defeat">💀 <strong>ПОРАЖЕНИЕ!</strong> Игра окончена. Перезагрузка...</div>';
+        setTimeout(() => location.reload(), 4000);
+    }
+}
 
         // СТАРТ ИГРЫ
         updateStatus();
