@@ -435,40 +435,102 @@
         }
 
         function endBattle() {
-            const log = document.getElementById('battle-log');
-            if (gameState.player.hp > 0) {
-                log.innerHTML += `
-                    <div class="victory">
-                        🏆 <strong>Победа!</strong>
-                        <br/>Получено: +100 золота, +25 магии.<br/>
-                        Ваш урон: <strong>${gameState.player.damageDealt}</strong>.<br/>
-                        Полученный урон: <strong>${gameState.player.damageReceived}</strong>.<br/>
-                        Оставшееся здоровье: <strong>${gameState.player.hp}/${gameState.player.maxHp}</strong>HP.
-                    </div>
-                `;
-                gameState.player.gold += 100;
-                gameState.player.magic += 25;
-                gameState.battleActive = false;
-                gameState.battleEnemy = null;
+    const log = document.getElementById('battle-log');
+    if (gameState.player.hp > 0) {
+        log.innerHTML += `
+            <div class="victory">
+                🏆 <strong>Победа!</strong>
+                <br/>Получено: +100 золота, +25 магии.<br/>
+                Ваш урон: <strong>${gameState.player.damageDealt}</strong>.<br/>
+                Полученный урон: <strong>${gameState.player.damageReceived}</strong>.<br/>
+                Оставшееся здоровье: <strong>${gameState.player.hp}/${gameState.player.maxHp}</strong>HP.
+            </div>
+        `;
+        gameState.player.gold += 100;
+        gameState.player.magic += 25;
+        gameState.battleActive = false;
+        gameState.battleEnemy = null;
 
-                // Показываем варианты выбора после боя
-                showChoicesAfterBattle();
-            } else {
-                log.innerHTML += '<div class="defeat">💀 <strong>Поражение!</strong> Игра окончена.</div>';
-                setTimeout(() => location.reload(), 4000);
-            }
+        // Если игрок выиграл, переводим его в следующую комнату
+        switch (gameState.currentRoom) {
+            case 'hallway_bold': // Победа в главном зале
+                gameState.currentRoom = 'courtyard'; // Переход в внутренний двор
+                break;
+            case 'garpia_fight': // Победа над гарпией
+                gameState.currentRoom = 'throne_room'; // Переход в тронный зал
+                break;
+            default:
+                console.log('Не найдена следующая комната после победы!');
         }
+
+        // Показываем варианты выбора после боя
+        showChoicesAfterBattle();
+    } else {
+        // Если игрок проиграл, выведем сообщение о поражении
+        handleDefeat();
+    }
+}
 
         function showChoicesAfterBattle() {
-            const room = gameWorld[gameState.currentRoom]; // Текущая комната
-            if (room && room.choices) {
-                showChoices(room.choices); // Показываем доступные выборы
-            } else {
-                console.error('Ошибка: не найдены доступные действия после боя.');
-            }
-        }
+    const room = gameWorld[gameState.currentRoom]; // Текущая комната
+    if (room && room.choices) {
+        showChoices(room.choices); // Показываем доступные выборы
+    } else {
+        console.error('Ошибка: не найдены доступные действия после боя.');
+    }
 
-        // Начало игры
+    // После появления выбора загрузим новую комнату
+    loadRoom();
+}
+ 
+<script>        // 1. Инициализация состояния игры и игрового мира        const gameState = {            player: {                name: prompt('🔮 Имя легендарного героя:') || 'Александр Тенегой',                hp: 150,                maxHp: 200,                strength: 100,                magic: 50,                gold: 150,                inventory: [],                damageDealt: 0,       // Общая сумма нанесённого урона                damageReceived: 0     // Общая сумма полученного урона            },            currentRoom: 'intro',            battleActive: false,            battleEnemy: null        };
+
+Копировать
+    document.getElementById('title').textContent = `🏰 ТАЙНА ЗАМКА | ${gameState.player.name}`;
+
+    const gameWorld = {
+        // Карта мира и комнаты игры
+    };
+
+    // 2. Базовые игровые функции
+    function updateStatus() {}
+    function typewriter() {}
+    function showChoices() {}
+    function buyItem() {}
+    function selectChoice() {}
+    function loadRoom() {}
+    function startBattle() {}
+    function battleLoop() {}
+    function endBattle() {}
+
+    // 3. Специфичные функции
+    function handleDefeat() {
+        const log = document.getElementById('battle-log');
+        log.innerHTML += '<div class="defeat">💀 <strong>Поражение!</strong> Вы погибли.</div>';
+        
+        // Предлагаем выбор: возобновить игру или отправиться в магазин
+        const choicesDiv = document.getElementById('choices');
+        choicesDiv.innerHTML = ''; // Очищаем предыдущие кнопки
+        const restartBtn = document.createElement('button');
+        restartBtn.className = 'choice-btn';
+        restartBtn.innerHTML = '⭐ Возобновить игру';
+        restartBtn.onclick = () => reloadGame();
+        choicesDiv.appendChild(restartBtn);
+        
+        const goShopBtn = document.createElement('button');
+        goShopBtn.className = 'choice-btn';
+        goShopBtn.innerHTML = '🛒 Отправиться в магазин';
+        goShopBtn.onclick = () => {
+            gameState.currentRoom = 'shop';
+            loadRoom();
+        };
+        choicesDiv.appendChild(goShopBtn);
+    }
+
+    function reloadGame() {
+        window.location.reload();
+    }
+        // 4. Начало игры
         updateStatus();
         loadRoom();
     </script>
