@@ -262,16 +262,20 @@
         gameState.battleActive = false;
         gameState.battleEnemy = null;
 
-        // Переход после победы
-        setTimeout(() => {
-            if (gameState.currentRoom === 'hallway_bold') {
+        // Автоматически переходим в следующую комнату после победы
+        switch (gameState.currentRoom) {
+            case 'hallway_bold':
                 gameState.currentRoom = 'courtyard';
-            } else if (gameState.currentRoom === 'garpia_fight') {
+                break;
+            case 'garpia_fight':
                 gameState.currentRoom = 'throne_room';
-            }
-            document.getElementById('battle-log').style.display = 'none';
-            loadRoom();
-        }, 3000);
+                break;
+            default:
+                console.error('Ошибка перехода после боя.');
+        }
+
+        // Загрузить новую сцену
+        loadRoom();
     } else {
         log.innerHTML += '<div class="defeat">💀 <strong>ПОРАЖЕНИЕ!</strong> Игра окончена. Перезагрузка...</div>';
         setTimeout(() => location.reload(), 4000);
