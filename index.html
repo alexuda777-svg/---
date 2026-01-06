@@ -52,7 +52,7 @@
     </div>
 
     <script>
-        // Глобальное состояние игры - ФИКС БОЯ!
+        // Глобальное состояние
         let gameState = {
             player: {
                 name: prompt('🔮 Имя героя:') || 'Александр Тенегой',
@@ -65,11 +65,9 @@
             },
             currentRoom: 'intro',
             isBattling: false,
-            battleEnemy: null,
-            battleTimeout: null
+            battleEnemy: null
         };
 
-        // Обновляем интерфейс
         function updateUI() {
             document.getElementById('player-name').textContent = gameState.player.name;
             document.getElementById('hp').textContent = `${gameState.player.hp}/${gameState.player.maxHp}`;
@@ -79,14 +77,12 @@
             document.getElementById('title').textContent = `🏰 ТАЙНА ЗАМКА | ${gameState.player.name}`;
         }
 
-        // Показать сцену
         function showScene(room) {
             const scene = gameWorld[room];
             document.getElementById('scene-text').innerHTML = scene.text.join('<br>');
             
             if (scene.onEnter) scene.onEnter();
             
-            // Инвентарь
             const inv = document.getElementById('inventory');
             if (gameState.player.inventory.length > 0) {
                 inv.innerHTML = gameState.player.inventory.map(item => `<span class="item">${item}</span>`).join('');
@@ -99,7 +95,6 @@
             updateUI();
         }
 
-        // Показать выборы
         function showChoices(choices) {
             const choicesEl = document.getElementById('choices');
             choicesEl.innerHTML = '';
@@ -113,9 +108,7 @@
             });
         }
 
-        // Обработка выбора
         function handleChoice(choice) {
-            // Магазин
             if (choice.cost && gameState.player.gold >= choice.cost) {
                 gameState.player.gold -= choice.cost;
                 if (choice.effect.strength) gameState.player.strength += choice.effect.strength;
@@ -129,81 +122,72 @@
                 return;
             }
             
-            // Переход
             if (choice.next) {
                 gameState.currentRoom = choice.next;
                 showScene(gameState.currentRoom);
             }
         }
 
-        // ✅ ФИКС БОЯ - НОВЫЙ СИСТЕМА!
+        // 🔥 НОВЫЙ ФИКС БОЯ - РЕКУРСИЯ БЕЗ TIMEOUT!
         function startBattle(enemyName, enemyHp, enemyStr) {
             gameState.isBattling = true;
             gameState.battleEnemy = { name: enemyName, hp: enemyHp, maxHp: enemyHp, strength: enemyStr };
+            
             document.getElementById('battle-log').style.display = 'block';
+            document.getElementById('battle-log').className = 'battle-log';
             document.getElementById('choices').innerHTML = '';
-            battleLoop();
+            
+            // Сразу начинаем бой
+            performBattleRound();
         }
 
-        function battleLoop() {
+        function performBattleRound() {
             if (!gameState.isBattling || !gameState.battleEnemy) return;
             
             const log = document.getElementById('battle-log');
-            log.innerHTML += `<div>⚔️ ${gameState.player.name} (${gameState.player.hp}HP) vs ${gameState.battleEnemy.name} (${gameState.battleEnemy.hp}/${gameState.battleEnemy.maxHp}HP)</div>`;
             
             // Удар игрока
             const playerDmg = Math.max(1, gameState.player.strength - Math.floor(Math.random() * 10));
             gameState.battleEnemy.hp -= playerDmg;
-            log.innerHTML += `<div>💥 ${gameState.player.name} нанес ${playerDmg} урона!</div>`;
+            log.innerHTML += `<div>⚔️ ${gameState.player.name} нанес <span class="highlight">${playerDmg}</span> урона ${gameState.battleEnemy.name}!</div>`;
             
             // Проверка победы
             if (gameState.battleEnemy.hp <= 0) {
-                endBattle(true);
+                log.innerHTML += `<div class="success">🎉 <span class="highlight">ПОБЕДА!</span> +100 золота!</div>`;
+                gameState.player.gold += 100;
+                setTimeout(() => finishBattle(true), 1500);
                 return;
             }
             
             // Удар врага
             const enemyDmg = Math.max(1, gameState.battleEnemy.strength - Math.floor(Math.random() * 15));
             gameState.player.hp -= enemyDmg;
-            log.innerHTML += `<div>💀 ${gameState.battleEnemy.name} нанес ${enemyDmg} урона!</div>`;
+            log.innerHTML += `<div>💀 ${gameState.battleEnemy.name} нанес <span class="highlight">${enemyDmg}</span> урона!</div>`;
             
             // Проверка поражения
             if (gameState.player.hp <= 0) {
-                endBattle(false);
+                log.innerHTML += `<div class="danger">💀 <span class="highlight">ПОРАЖЕНИЕ!</span> Игра окончена.</div>`;
+                log.className = 'battle-log defeat';
+                setTimeout(() => {
+                    document.getElementById('choices').innerHTML = '<button class="choice-btn" onclick="location.reload()">🔄 Начать заново</button>';
+                }, 1500);
+                gameState.isBattling = false;
                 return;
             }
             
-            // Следующий раунд через 1 сек
-            gameState.battleTimeout = setTimeout(battleLoop, 1000);
+            // Следующий раунд через 800мс
+            setTimeout(performBattleRound, 800);
         }
 
-        // ✅ ГАРАНТИРОВАННЫЙ конец боя
-        function endBattle(victory) {
-            clearTimeout(gameState.battleTimeout);
+        function finishBattle(victory) {
             gameState.isBattling = false;
             gameState.battleEnemy = null;
             
-            const log = document.getElementById('battle-log');
             if (victory) {
-                log.className = 'battle-log victory';
-                log.innerHTML += '<div class="success">🎉 ПОБЕДА! +100 золота!</div>';
-                gameState.player.gold += 100;
                 gameState.currentRoom = 'hallway_victory';
-            } else {
-                log.className = 'battle-log defeat';
-                log.innerHTML += '<div class="danger">💀 ПОРАЖЕНИЕ! Игра окончена.</div>';
-                document.getElementById('choices').innerHTML = '<button class="choice-btn" onclick="location.reload()">🔄 Начать заново</button>';
-                return;
-            }
-            
-            log.style.display = 'block';
-            updateUI();
-            
-            // Выборы после боя через 2 сек
-            setTimeout(() => {
+                document.getElementById('battle-log').style.display = 'none';
                 showScene(gameState.currentRoom);
-                log.style.display = 'none';
-            }, 2000);
+            }
         }
 
         // Игровой мир
@@ -295,10 +279,11 @@
             }
         };
 
-        // Старт игры
+        // Запуск игры
         updateUI();
         showScene('intro');
     </script>
 </body>
 </html>
+
 
