@@ -29,6 +29,8 @@
         .battle-log{background:rgba(80,0,0,0.95);border:2px solid #ff4444;border-radius:12px;padding:20px;margin:15px 0;max-height:200px;overflow-y:auto}
         .victory{background:linear-gradient(45deg,#44ff44,#00ff88)!important;color:#000!important}
         .defeat{background:linear-gradient(45deg,#ff4444,#ff8888)!important;color:#000!important}
+        .shop-item{background:#224400;color:#ffdd00;padding:15px;border-radius:10px;margin:5px 0;cursor:pointer;border:2px solid #44aa44}
+        .shop-item:hover{background:#336600}
         @media(max-width:600px){.status-bar{grid-template-columns:1fr}}
     </style>
 </head>
@@ -37,9 +39,9 @@
         <h1 class="header" id="title">🏰 ТАЙНА ПРОКЛЯТОГО ЗАМКА</h1>
         <div class="status-bar">
             <div class="stat"><div>⚔️ <span id="player-name">Герой</span></div><div class="hp" id="hp">100/100</div></div>
-            <div class="stat"><div>💪 Сила</div><div class="strength" id="strength">10</div></div>
-            <div class="stat"><div>✨ Магия</div><div class="magic" id="magic">0</div></div>
-            <div class="stat"><div>🪙 Золото</div><div class="gold" id="gold">0</div></div>
+            <div class="stat"><div>💪 Сила</div><div class="strength" id="strength">100</div></div>
+            <div class="stat"><div>✨ Магия</div><div class="magic" id="magic">50</div></div>
+            <div class="stat"><div>🪙 Золото</div><div class="gold" id="gold">150</div></div>
         </div>
         <div class="scene">
             <div class="scene-text" id="scene-text">🔮 Инициализация...</div>
@@ -49,29 +51,207 @@
         <div class="battle-log" id="battle-log" style="display:none"></div>
     </div>
     <script>
-        const gameState={player:{name:prompt('🔮 Имя героя:')||'Александр',hp:100,maxHp:100,strength:10,magic:0,gold:0,inventory:[],equippedWeapon:null},currentRoom:'intro',battle:{active:false,enemy:null,turn:0}};
-        document.getElementById('title').textContent=`🏰 ТАЙНА ЗАМКА | ${gameState.player.name}`;
-        const gameWorld={
-            intro:{text:["🌙 <span class='highlight'>Ночь 13-го</span>. Гроза над <span class='danger'>Проклятым Замком</span>.","Ты у чёрных врат. Шепот: <span class='magic-text'>'Наследник...'</span>","Отец пропал здесь 13 лет назад.","🚪 Войти?"],choices:[{text:"⚔️ Войти с боем",next:'hallway_bold'},{text:"🕯️ Осторожно",next:'hallway_cautious'},{text:"🔮 Магия",next:'hallway_magic',magicReq:5}]},
-            hallway_bold:{text:["⚔️ Ты врываешься в зал!","💀 <span class='danger'>Скелеты оживают!</span>","🎲 Автобой!"],onEnter:()=>startBattle('Скелеты',45,12),choices:[]},
-            hallway_cautious:{text:["🕯️ Крадёшься...","💎 <span class='success'>Шкатулка!</span>","<span class='highlight'>Кинжал (+8 силы)</span> +25 золота!"],onEnter:()=>{gameState.player.inventory.push('Кинжал ассасина');gameState.player.gold+=25;gameState.player.strength+=8},choices:[{text:"➡️ Двор",next:'courtyard'},{text:"🔍 Секрет",next:'secret_room'}]},
-            hallway_magic:{text:["🔮 <span class='magic-text'>'Lux Aeterna'</span>","💫 Тени расступаются","✨ +15 магии!"],onEnter:()=>gameState.player.magic+=15,choices:[{text:"🌀 Тайный путь",next:'shadow_realm'},{text:"🏰 Обычный",next:'courtyard'}]},
-            secret_room:{text:["🔒 <span class='highlight'>Секретная комната</span>","💰 75 золота + <span class='success'>Зелье HP</span>","🧪 +50 HP!"],onEnter:()=>{gameState.player.gold+=75;gameState.player.hp=Math.min(gameState.player.maxHp,gameState.player.hp+50)},choices:[{text:"➡️ Двор",next:'courtyard'}]},
-            shadow_realm:{text:["🌀 <span class='magic-text'>Царство Теней</span>","👻 <span class='highlight'>Призрачный меч (+12 силы)</span>","✨ +20 магии!"],onEnter:()=>{gameState.player.inventory.push('Призрачный меч');gameState.player.strength+=12;gameState.player.magic+=20},choices:[{text:"➡️ Двор",next:'courtyard'}]},
-            courtyard:{text:["🌿 <span class='highlight'>Двор</span>. Туман.","👹 <span class='danger'>Гарпия</span> у сундука.","🗡️ Есть оружие?"],choices:[{text:"⚔️ Гарпия (кинжал)",next:'garpia_fight',weaponReq:'Кинжал ассасина'},{text:"🧙 Магия",next:'garpia_magic',magicReq:10},{text:"🏃 Обойти",next:'throne_room'}]},
-            garpia_fight:{text:["🗡️ <span class='highlight'>Кинжал vs Гарпия!</span>","🎲 Автобой!"],onEnter:()=>startBattle('Гарпия',65,15),choices:[]},
-            garpia_magic:{text:["🔥 <span class='magic-text'>Взрыв!</span> Гарпия уничтожена!","💎 +40 золота + Амулет","✨ Прилив силы!"],onEnter:()=>{gameState.player.gold+=40;gameState.player.magic+=5-10;gameState.player.inventory.push('Амулет')},choices:[{text:"👑 Тронный зал",next:'throne_room'}]},
-            throne_room:{text:["👑 <span class='highlight'>Тронный зал</span>","<span class='danger'>Король Демонов!</span>","⚔️ <span class='highlight'>ФИНАЛ!</span>"],onEnter:()=>startBattle('Король Демонов',180,25),choices:[]}
+        const gameState={
+            player:{
+                name:prompt('🔮 Имя легендарного героя:')||'Александр Тенегой',
+                hp:150, maxHp:200, 
+                strength:100, 
+                magic:50, 
+                gold:150,
+                inventory:[],
+                equippedWeapon:null
+            },
+            currentRoom:'intro',
+            battle:{active:false,enemy:null,turn:0}
         };
-        function updateStatus(){document.getElementById('player-name').textContent=gameState.player.name;document.getElementById('hp').textContent=`${Math.max(0,gameState.player.hp)}/${gameState.player.maxHp}`;document.getElementById('strength').textContent=gameState.player.strength;document.getElementById('magic').textContent=gameState.player.magic;document.getElementById('gold').textContent=gameState.player.gold;const inv=document.getElementById('inventory');if(gameState.player.inventory.length){inv.style.display='flex';inv.innerHTML=gameState.player.inventory.map(item=>`<span class="item">${item}</span>`).join('')}else inv.style.display='none'}
-        function typewriter(texts,callback){const sceneText=document.getElementById('scene-text');sceneText.innerHTML='';let currentText='',charIndex=0,lineIndex=0;function typeChar(){if(charIndex<texts[lineIndex].length){currentText+=texts[lineIndex][charIndex];sceneText.innerHTML=currentText.replace(/\n/g,'<br>');charIndex++;setTimeout(typeChar,40)}else if(lineIndex<texts.length-1){lineIndex++;charIndex=0;currentText+='<br><br>';setTimeout(typeChar,300)}else callback&&callback()}typeChar()}
-        function showChoices(choices){const choicesDiv=document.getElementById('choices');choicesDiv.innerHTML='';choices.forEach(choice=>{const btn=document.createElement('button');btn.className='choice-btn';btn.innerHTML=choice.text;let canChoose=true;if(choice.magicReq&&gameState.player.magic<choice.magicReq)canChoose=false;if(choice.weaponReq&&!gameState.player.inventory.includes(choice.weaponReq))canChoose=false;if(!canChoose){btn.style.opacity='.5';btn.disabled=true;btn.title='Нужно оружие/магия'}btn.onclick=()=>selectChoice(choice);choicesDiv.appendChild(btn)})}
-        function selectChoice(choice){gameState.currentRoom=choice.next;loadRoom()}
-        function loadRoom(){const room=gameWorld[gameState.currentRoom];if(!room)return;document.getElementById('battle-log').style.display='none';typewriter(room.text,()=>{if(room.onEnter)room.onEnter();showChoices(room.choices);updateStatus()})}
-        function startBattle(enemyName,enemyHp,enemyStrength){gameState.battle.active=true;gameState.battle.enemy={name:enemyName,hp:enemyHp,maxHp:enemyHp,strength:enemyStrength};gameState.battle.turn=0;const battleLog=document.getElementById('battle-log');battleLog.style.display='block';battleLog.innerHTML=`<div class="danger">⚔️ БОЙ С ${enemyName.toUpperCase()}!</div>`;battleLog.scrollTop=battleLog.scrollHeight;battleTurn()}
-        function battleTurn(){if(gameState.player.hp<=0||gameState.battle.enemy.hp<=0){endBattle();return}gameState.battle.turn++;const log=document.getElementById('battle-log');const playerDamage=Math.floor(Math.random()*gameState.player.strength)+5;gameState.battle.enemy.hp-=playerDamage;log.innerHTML+=`<div>💥 ${gameState.player.name}: <strong>${playerDamage}</strong> ур!</div>`;if(gameState.battle.enemy.hp>0){const enemyDamage=Math.floor(Math.random()*gameState.battle.enemy.strength)+3;gameState.player.hp-=enemyDamage;log.innerHTML+=`<div>💀 ${gameState.battle.enemy.name}: <strong>${enemyDamage}</strong> ур!</div>`}log.innerHTML+=`<div>📊 ${gameState.player.name}: ${Math.max(0,gameState.player.hp)}HP | ${gameState.battle.enemy.name}: ${Math.max(0,gameState.battle.enemy.hp)}/${gameState.battle.enemy.maxHp}</div>`;log.scrollTop=log.scrollHeight;updateStatus();if(gameState.player.hp>0&&gameState.battle.enemy.hp>0)setTimeout(battleTurn,1200)}
-        function endBattle(){const log=document.getElementById('battle-log');if(gameState.player.hp>0){log.innerHTML+='<div class="victory">🏆 ПОБЕДА! +50 золота!</div>';gameState.player.gold+=50;gameState.player.magic+=10;setTimeout(()=>{gameState.currentRoom='courtyard';loadRoom()},2500)}else{log.innerHTML+='<div class="defeat">💀 ПОРАЖЕНИЕ! Перезагрузка...</div>';setTimeout(()=>location.reload(),4000)}}
-        updateStatus();loadRoom();
+        document.getElementById('title').textContent=`🏰 ТАЙНА ЗАМКА | ${gameState.player.name}`;
+        
+        const gameWorld={
+            intro:{
+                text:["🌙 <span class='highlight'>Ночь 13-го</span>. Гроза над <span class='danger'>Проклятым Замком</span>.","Ты у чёрных врат. Шепот: <span class='magic-text'>'Наследник...'</span>","Отец пропал здесь 13 лет назад.","🚪 Войти?"],
+                choices:[{text:"⚔️ Войти с боем",next:'hallway_bold'},{text:"🕯️ Осторожно",next:'hallway_cautious'},{text:"🛒 Магазин",next:'shop'}]
+            },
+            hallway_bold:{
+                text:["⚔️ Ты врываешься в зал!","💀 <span class='danger'>Скелеты оживают!</span>","🎲 Автобой!"],
+                onEnter:()=>startBattle('Скелеты',80,20),
+                choices:[]
+            },
+            hallway_cautious:{
+                text:["🕯️ Крадёшься...","💎 <span class='success'>Шкатулка!</span>","<span class='highlight'>Кинжал (+20 силы)</span> +75 золота!"],
+                onEnter:()=>{gameState.player.inventory.push('Кинжал ассасина');gameState.player.gold+=75;gameState.player.strength+=20},
+                choices:[{text:"➡️ Двор",next:'courtyard'},{text:"🔍 Секрет",next:'secret_room'},{text:"🛒 Магазин",next:'shop'}]
+            },
+            shop:{
+                text:["🛒 <span class='highlight'>ТАИНСТВЕННЫЙ ЛАРЕК</span>","💰 Проходимец предлагает товары:","Выбери что купить:"],
+                choices:[
+                    {text:"🗡️ Огненный меч (100 золота) +30 силы",next:'shop',cost:100,item:'Огненный меч',stat:'strength',value:30},
+                    {text:"✨ Кристалл маны (80 золота) +40 магии",next:'shop',cost:80,item:'Кристалл маны',stat:'magic',value:40},
+                    {text:"🧪 Супер-зелье (60 золота) +75 HP",next:'shop',cost:60,item:'Супер-зелье',stat:'hp',value:75},
+                    {text:"➡️ Двор",next:'courtyard'}
+                ]
+            },
+            secret_room:{
+                text:["🔒 <span class='highlight'>СЕКРЕТНАЯ КОМНАТА</span>","💰 200 золота + <span class='success'>Легендарный амулет</span>","✨ +25 ко всем статам!"],
+                onEnter:()=>{gameState.player.gold+=200;gameState.player.inventory.push('Легендарный амулет');gameState.player.strength+=25;gameState.player.magic+=25},
+                choices:[{text:"➡️ Двор",next:'courtyard'},{text:"🛒 Магазин",next:'shop'}]
+            },
+            courtyard:{
+                text:["🌿 <span class='highlight'>Двор</span>. Туман стелется.","👹 <span class='danger'>Гарпия</span> охраняет сундук.","Что делать?"],
+                choices:[{text:"⚔️ Гарпия (кинжал)",next:'garpia_fight',weaponReq:'Кинжал ассасина'},{text:"🧙 Магия (30+)",next:'garpia_magic',magicReq:30},{text:"🛒 Магазин",next:'shop'},{text:"👑 Тронный зал",next:'throne_room'}]
+            },
+            garpia_fight:{
+                text:["🗡️ <span class='highlight'>Кинжал vs Гарпия!</span>","🎲 Автобой!"],
+                onEnter:()=>startBattle('Гарпия',120,28),
+                choices:[]
+            },
+            garpia_magic:{
+                text:["🔥 <span class='magic-text'>Магический взрыв!</span> Гарпия испепелена!","💎 +100 золота + <span class='success'>Крылья Гарпии</span>","✨ +15 магии!"],
+                onEnter:()=>{gameState.player.gold+=100;gameState.player.magic+=15-30;gameState.player.inventory.push('Крылья Гарпии')},
+                choices:[{text:"👑 Тронный зал",next:'throne_room'},{text:"🛒 Магазин",next:'shop'}]
+            },
+            throne_room:{
+                text:["👑 <span class='highlight'>ТРОННЫЙ ЗАЛ</span>","<span class='danger'>КОРОЛЬ ДЕМОНОВ</span> на троне из костей!","⚔️ <span class='highlight'>ФИНАЛЬНАЯ БИТВА!</span>"],
+                onEnter:()=>startBattle('Король Демонов',300,40),
+                choices:[]
+            }
+        };
+
+        function updateStatus(){
+            document.getElementById('player-name').textContent=gameState.player.name;
+            document.getElementById('hp').textContent=`${Math.max(0,gameState.player.hp)}/${gameState.player.maxHp}`;
+            document.getElementById('strength').textContent=gameState.player.strength;
+            document.getElementById('magic').textContent=gameState.player.magic;
+            document.getElementById('gold').textContent=gameState.player.gold;
+            const inv=document.getElementById('inventory');
+            if(gameState.player.inventory.length){
+                inv.style.display='flex';
+                inv.innerHTML=gameState.player.inventory.map(item=>`<span class="item">${item}</span>`).join('');
+            } else inv.style.display='none';
+        }
+
+        function typewriter(texts,callback){
+            const sceneText=document.getElementById('scene-text');
+            sceneText.innerHTML='';
+            let currentText='',charIndex=0,lineIndex=0;
+            function typeChar(){
+                if(charIndex<texts[lineIndex].length){
+                    currentText+=texts[lineIndex][charIndex];
+                    sceneText.innerHTML=currentText.replace(/\n/g,'<br>');
+                    charIndex++;
+                    setTimeout(typeChar,40);
+                } else if(lineIndex<texts.length-1){
+                    lineIndex++;charIndex=0;currentText+='<br><br>';setTimeout(typeChar,300);
+                } else callback&&callback();
+            }
+            typeChar();
+        }
+
+        function showChoices(choices){
+            const choicesDiv=document.getElementById('choices');
+            choicesDiv.innerHTML='';
+            choices.forEach(choice=>{
+                const btn=document.createElement('button');
+                btn.className='choice-btn';
+                btn.innerHTML=choice.text;
+                let canChoose=true;
+                if(choice.magicReq&&gameState.player.magic<choice.magicReq)canChoose=false;
+                if(choice.weaponReq&&!gameState.player.inventory.includes(choice.weaponReq))canChoose=false;
+                if(choice.cost&&gameState.player.gold<choice.cost)canChoose=false;
+                
+                if(!canChoose){
+                    btn.style.opacity='.5';
+                    btn.disabled=true;
+                    btn.title='Недостаточно ресурсов';
+                } else if(choice.cost){
+                    btn.onclick=()=>buyItem(choice);
+                } else {
+                    btn.onclick=()=>selectChoice(choice);
+                }
+                choicesDiv.appendChild(btn);
+            });
+        }
+
+        function buyItem(choice){
+            gameState.player.gold-=choice.cost;
+            if(choice.stat=='strength') gameState.player.strength+=choice.value;
+            if(choice.stat=='magic') gameState.player.magic+=choice.value;
+            if(choice.stat=='hp') gameState.player.hp=Math.min(gameState.player.maxHp,gameState.player.hp+choice.value);
+            if(choice.item) gameState.player.inventory.push(choice.item);
+            loadRoom();
+        }
+
+        function selectChoice(choice){
+            gameState.currentRoom=choice.next;
+            loadRoom();
+        }
+
+        function loadRoom(){
+            const room=gameWorld[gameState.currentRoom];
+            if(!room)return;
+            document.getElementById('battle-log').style.display='none';
+            typewriter(room.text,()=>{
+                if(room.onEnter)room.onEnter();
+                showChoices(room.choices);
+                updateStatus();
+            });
+        }
+
+        function startBattle(enemyName,enemyHp,enemyStrength){
+            gameState.battle.active=true;
+            gameState.battle.enemy={name:enemyName,hp:enemyHp,maxHp:enemyHp,strength:enemyStrength};
+            const battleLog=document.getElementById('battle-log');
+            battleLog.style.display='block';
+            battleLog.innerHTML=`<div class="danger">⚔️ БОЙ С ${enemyName.toUpperCase()}!</div>`;
+            battleLog.scrollTop=battleLog.scrollHeight;
+            battleTurn();
+        }
+
+        function battleTurn(){
+            if(gameState.player.hp<=0||gameState.battle.enemy.hp<=0){
+                endBattle();
+                return;
+            }
+            const log=document.getElementById('battle-log');
+            const playerDamage=Math.floor(Math.random()*gameState.player.strength)+15;
+            gameState.battle.enemy.hp-=playerDamage;
+            log.innerHTML+=`<div>💥 ${gameState.player.name}: <strong>${playerDamage}</strong> урона!</div>`;
+            
+            if(gameState.battle.enemy.hp>0){
+                const enemyDamage=Math.floor(Math.random()*gameState.battle.enemy.strength)+8;
+                gameState.player.hp-=enemyDamage;
+                log.innerHTML+=`<div>💀 ${gameState.battle.enemy.name}: <strong>${enemyDamage}</strong> урона!</div>`;
+            }
+            
+            log.innerHTML+=`<div>📊 ${gameState.player.name}: ${Math.max(0,gameState.player.hp)}HP | ${gameState.battle.enemy.name}: ${Math.max(0,gameState.battle.enemy.hp)}/${gameState.battle.enemy.maxHp}</div>`;
+            log.scrollTop=log.scrollHeight;
+            updateStatus();
+            
+            if(gameState.player.hp>0&&gameState.battle.enemy.hp>0){
+                setTimeout(battleTurn,1200);
+            }
+        }
+
+        function endBattle(){
+            const log=document.getElementById('battle-log');
+            if(gameState.player.hp>0){
+                log.innerHTML+='<div class="victory">🏆 ПОБЕДА! +100 золота +25 магии!</div>';
+                gameState.player.gold+=100;
+                gameState.player.magic+=25;
+                setTimeout(()=>{
+                    if(gameState.currentRoom=='hallway_bold') gameState.currentRoom='courtyard';
+                    else if(gameState.currentRoom=='garpia_fight') gameState.currentRoom='throne_room';
+                    else gameState.currentRoom='courtyard';
+                    loadRoom();
+                },3000);
+            } else {
+                log.innerHTML+='<div class="defeat">💀 ПОРАЖЕНИЕ! Перезагрузка...</div>';
+                setTimeout(()=>location.reload(),4000);
+            }
+        }
+
+        updateStatus();
+        loadRoom();
     </script>
 </body>
 </html>
+
