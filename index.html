@@ -158,31 +158,37 @@
             typeChar();
         }
 
-        function showChoices(choices){
-            const choicesDiv=document.getElementById('choices');
-            choicesDiv.innerHTML='';
-            choices.forEach(choice=>{
-                const btn=document.createElement('button');
-                btn.className='choice-btn';
-                btn.innerHTML=choice.text;
-                let canChoose=true;
-                if(choice.magicReq&&gameState.player.magic<choice.magicReq)canChoose=false;
-                if(choice.weaponReq&&!gameState.player.inventory.includes(choice.weaponReq))canChoose=false;
-                if(choice.cost&&gameState.player.gold<choice.cost)canChoose=false;
-                
-                if(!canChoose){
-                    btn.style.opacity='.5';
-                    btn.disabled=true;
-                    btn.title='Недостаточно ресурсов';
-                } else if(choice.effect){
-                    btn.onclick=()=>buyItem(choice);
-                } else {
-                    btn.onclick=()=>selectChoice(choice);
-                }
-                choicesDiv.appendChild(btn);
-            });
+        showChoices(choices) {
+    const choicesDiv = document.getElementById('choices');
+    choicesDiv.innerHTML = '';
+    choices.forEach((choice) => {
+        const btn = document.createElement('button');
+        btn.className = 'choice-btn';
+        btn.innerHTML = choice.text;
+
+        // Проверка доступности выбора
+        let isAvailable = true;
+        if (choice.magicReq && gameState.player.magic < choice.magicReq) {
+            isAvailable = false;
+        }
+        if (choice.weaponReq && !gameState.player.inventory.includes(choice.weaponReq)) {
+            isAvailable = false;
+        }
+        if (choice.cost && gameState.player.gold < choice.cost) {
+            isAvailable = false;
         }
 
+        if (!isAvailable) {
+            btn.style.opacity = '.5';
+            btn.disabled = true;
+            btn.title = 'Недостаточно ресурсов';
+        } else {
+            btn.onclick = () => selectChoice(choice);
+        }
+
+        choicesDiv.appendChild(btn);
+    });
+}
         function buyItem(choice){
             gameState.player.gold-=choice.cost;
             if(choice.effect.strength) gameState.player.strength+=choice.effect.strength;
