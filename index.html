@@ -6,6 +6,33 @@
     <title>🏰 Тайна Проклятого Замка</title>
     <style>
         /* CSS стили остались теми же */
+     *{margin:0;padding:0;box-sizing:border-box}
+        body{background:linear-gradient(45deg,#1a0033,#000011);color:#e0e0ff;font-family:monospace;padding:20px;min-height:100vh}
+        .container{max-width:900px;margin:0 auto}
+        .header{text-align:center;background:linear-gradient(90deg,#aa00ff,#00ffff,#44ff44);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-size:2.5em;margin:20px 0;text-shadow:0 0 30px #aa00ff55;animation:glow 3s infinite alternate}
+        @keyframes glow{0%{filter:drop-shadow(0 0 10px #aa00ff)}100%{filter:drop-shadow(0 0 20px #00ffff)}}
+        .status-bar{background:rgba(0,20,60,0.95);border:2px solid #44aaff;border-radius:15px;padding:15px;margin:20px 0;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:15px}
+        .stat{text-align:center}
+        .hp{color:#ff4444;font-size:1.4em;font-weight:bold}
+        .strength{color:#ffaa00}
+        .magic{color:#aa44ff}
+        .gold{color:#ffd700}
+        .scene{background:rgba(10,10,25,0.95);border:2px solid #666;border-radius:20px;padding:30px;min-height:400px;margin:20px 0;box-shadow:0 0 40px rgba(170,0,255,0.2)}
+        .scene-text{line-height:1.6;font-size:1.1em}
+        .highlight{background:rgba(255,255,0,0.2);padding:2px 8px;border-radius:4px;color:#ffdd44;font-weight:bold}
+        .danger{color:#ff6666}
+        .success{color:#44ff44}
+        .magic-text{color:#aa44ff;text-shadow:0 0 10px #aa44ff}
+        .choices{display:flex;flex-direction:column;gap:12px}
+        .choice-btn{background:linear-gradient(135deg,#667eea,#764ba2,#f093fb);color:white;border:none;padding:20px;font-size:1.2em;border-radius:12px;cursor:pointer;transition:all .3s;box-shadow:0 8px 25px rgba(0,0,0,0.4)}
+        .choice-btn:hover{transform:translateY(-5px);box-shadow:0 15px 35px rgba(102,126,234,0.6)}
+        .choice-btn:disabled{opacity:0.5;transform:none!important}
+        .inventory{background:rgba(0,50,20,0.9);border:2px solid #44aa44;border-radius:12px;padding:15px;margin:15px 0;display:flex;flex-wrap:wrap;gap:10px}
+        .item{background:linear-gradient(45deg,#44aa44,#88dd88);color:#000;padding:8px 15px;border-radius:20px;font-weight:bold}
+        .battle-log{background:rgba(80,0,0,0.95);border:2px solid #ff4444;border-radius:12px;padding:20px;margin:15px 0;max-height:200px;overflow-y:auto}
+        .victory{background:linear-gradient(45deg,#44ff44,#00ff88)!important;color:#000!important}
+        .defeat{background:linear-gradient(45deg,#ff4444,#ff8888)!important;color:#000!important}
+        @media(max-width:600px){.status-bar{grid-template-columns:1fr}}
     </style>
 </head>
 <body>
